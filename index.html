@@ -1,0 +1,29 @@
+from pathlib import Path
+p = Path("/mnt/data/vocabulary_speaking_practice.html")
+html = p.read_text(encoding="utf-8")
+
+old = '''order.forEach((q,i)=>{
+ const d=el('div','q');d.dataset.group='order';d.dataset.index=i;
+ d.append(el('div','prompt',`${i+1}. Put these words in the correct order: <em>${q[0]}</em>`));
+ const s=el('select');s.setAttribute('aria-label','Phrase '+(i+1));
+ s.innerHTML='<option value="">Choose the correct phrase…</option>'+[
+ "But, looking at it another way","Having said that","Mind you","On the other hand","I never thought of that","You know what I mean",
+ "Looking at another way, but","Said having that","You mind","On the other hand, the","I thought of that never","I mean what you know"
+ ].map(x=>`<option>${x}</option>`).join('');
+ d.append(s,el('div','feedback'));orderBox.append(d);
+});'''
+new = '''order.forEach((q,i)=>{
+ const d=el('div','q');d.dataset.group='order';d.dataset.index=i;
+ d.append(el('div','prompt',`${i+1}. Put these words in the correct order: <em>${q[0]}</em>`));
+ const input=el('input','text');input.type='text';input.placeholder='Write the complete phrase…';input.setAttribute('aria-label','Write phrase '+(i+1));
+ d.append(input,el('div','feedback'));orderBox.append(d);
+});'''
+assert old in html
+html = html.replace(old,new)
+html = html.replace("return d.querySelector('select').value;", "return d.querySelector('input.text').value.trim();")
+html = html.replace("return user===answer;", "return user.toLowerCase().replace(/[.!?]/g,'').replace(/\\\\s+/g,' ').trim()===answer.toLowerCase().replace(/[.!?]/g,'').replace(/\\\\s+/g,' ').trim();", 1) if False else html
+# Specifically replace the order branch's exact comparison with normalised text comparison.
+html = html.replace(" return user===answer;\\n}", " return user.toLowerCase().replace(/[.!?]/g,'').replace(/\\\\s+/g,' ').trim()===answer.toLowerCase().replace(/[.!?]/g,'').replace(/\\\\s+/g,' ').trim();\\n}")
+html = html.replace(" document.querySelectorAll('select').forEach(x=>x.selectedIndex=0);", " document.querySelectorAll('#orderQs input.text').forEach(x=>x.value='');")
+p.write_text(html, encoding="utf-8")
+print("Updated interactive quiz:", p, "|", p.stat().st_size, "bytes")
